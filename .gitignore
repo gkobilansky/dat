@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+
+# builds
+.next/
+dist/
+out/
+
+# env
+.env
+.env.local
+.env.*.local
+
+# prisma
+packages/db/generated/
+
+# editor/os
+.DS_Store
+*.pem
+.idea/
+.vscode/
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# local data
+data/
+.minio/
