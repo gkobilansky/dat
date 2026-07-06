@@ -8,15 +8,9 @@ import {
   readCaseFile,
   withCaseLease,
 } from "@dat/storage";
-import type { Case } from "@dat/db";
 import { CASE_STORAGE_DIR } from "../../env";
-import { publicProcedure, router, type TrpcContext } from "../init";
-
-async function requireCase(ctx: TrpcContext, caseId: string): Promise<Case> {
-  const found = await ctx.prisma.case.findUnique({ where: { id: caseId } });
-  if (!found) throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
-  return found;
-}
+import { requireOwnedCase } from "../case-access";
+import { publicProcedure, router } from "../init";
 
 function rethrowPathError(error: unknown): never {
   if (error instanceof CasePathError) {
@@ -31,14 +25,14 @@ export const fileRouter = router({
   list: publicProcedure
     .input(z.object({ caseId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const kase = await requireCase(ctx, input.caseId);
+      const kase = await requireOwnedCase(ctx, input.caseId);
       return listCaseFiles(CASE_STORAGE_DIR, kase.repoSlug);
     }),
 
   read: publicProcedure
     .input(z.object({ caseId: z.string(), path: filePathSchema }))
     .query(async ({ ctx, input }) => {
-      const kase = await requireCase(ctx, input.caseId);
+      const kase = await requireOwnedCase(ctx, input.caseId);
       try {
         const content = await readCaseFile(CASE_STORAGE_DIR, kase.repoSlug, input.path);
         const sha = await caseHeadSha(CASE_STORAGE_DIR, kase.repoSlug);
@@ -60,7 +54,7 @@ export const fileRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const kase = await requireCase(ctx, input.caseId);
+      const kase = await requireOwnedCase(ctx, input.caseId);
       const message =
         input.message ?? `Update ${input.files.map((f) => f.path).join(", ")}`;
       const author = {

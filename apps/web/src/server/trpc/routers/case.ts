@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 import { caseLog, initCaseRepo } from "@dat/storage";
 import { CASE_STORAGE_DIR } from "../../env";
+import { requireOwnedCase } from "../case-access";
 import { publicProcedure, router } from "../init";
 
 function slugify(title: string): string {
@@ -30,6 +30,7 @@ function seedFiles(title: string) {
 export const caseRouter = router({
   list: publicProcedure.query(({ ctx }) =>
     ctx.prisma.case.findMany({
+      where: { ownerId: ctx.user.id },
       orderBy: { updatedAt: "desc" },
       include: { _count: { select: { messages: true } } },
     }),
@@ -37,11 +38,7 @@ export const caseRouter = router({
 
   get: publicProcedure
     .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const found = await ctx.prisma.case.findUnique({ where: { id: input.id } });
-      if (!found) throw new TRPCError({ code: "NOT_FOUND" });
-      return found;
-    }),
+    .query(({ ctx, input }) => requireOwnedCase(ctx, input.id)),
 
   create: publicProcedure
     .input(z.object({ title: z.string().trim().min(1).max(200) }))
@@ -56,8 +53,7 @@ export const caseRouter = router({
   timeline: publicProcedure
     .input(z.object({ id: z.string(), limit: z.number().int().min(1).max(100).default(20) }))
     .query(async ({ ctx, input }) => {
-      const found = await ctx.prisma.case.findUnique({ where: { id: input.id } });
-      if (!found) throw new TRPCError({ code: "NOT_FOUND" });
+      const found = await requireOwnedCase(ctx, input.id);
       return caseLog(CASE_STORAGE_DIR, found.repoSlug, input.limit);
     }),
 });
