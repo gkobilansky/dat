@@ -9,7 +9,8 @@ the storage model, conflict policy, and agent runtime.
 - `apps/web` — Next.js 16 (App Router), tRPC v11 API, UI
 - `apps/worker` — standalone BullMQ worker; hosts the agent loop (Claude Agent SDK)
 - `packages/db` — Prisma schema + client (`@dat/db`)
-- `packages/shared` — queue names, job/progress types shared by web and worker (`@dat/shared`)
+- `packages/shared` — queue names, job/progress types, CSV utils shared by web and worker (`@dat/shared`)
+- `packages/storage` — case git storage (git CLI wrapper) + per-case Redis lease (`@dat/storage`)
 - `infra/sandbox` — Dockerfile for the per-case agent sandbox image
 
 ## Commands
@@ -17,6 +18,7 @@ the storage model, conflict policy, and agent runtime.
 - `pnpm infra:up` — start Postgres, Redis, MinIO (docker compose)
 - `pnpm dev` — run web + worker in parallel
 - `pnpm db:migrate` — Prisma migrate dev
+- `pnpm test` — run all package test suites (Redis must be up for lease tests)
 - `pnpm typecheck` — typecheck all packages
 
 ## Hard rules from PLAN.md

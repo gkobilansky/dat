@@ -2,9 +2,10 @@
   "name": "dat",
   "private": true,
   "scripts": {
-    "dev": "pnpm --parallel --filter ./apps/* dev",
+    "dev": "pnpm --parallel --filter \"./apps/*\" dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
     "lint": "pnpm -r lint",
     "db:generate": "pnpm --filter @dat/db generate",
     "db:migrate": "pnpm --filter @dat/db migrate:dev",

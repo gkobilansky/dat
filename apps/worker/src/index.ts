@@ -1,19 +1,17 @@
+import "./env";
 import { Worker } from "bullmq";
-import { Redis } from "ioredis";
 import {
   AGENT_QUEUE,
   progressChannel,
   type AgentJob,
   type AgentProgressEvent,
 } from "@dat/shared";
+import { REDIS_URL, agentMode } from "./env";
+import { redis } from "./redis";
 import { runAgentTask } from "./agent/run";
 
-const redisUrl = process.env.REDIS_URL ?? "redis://localhost:6379";
-
-const publisher = new Redis(redisUrl);
-
 async function publish(caseId: string, event: AgentProgressEvent) {
-  await publisher.publish(progressChannel(caseId), JSON.stringify(event));
+  await redis.publish(progressChannel(caseId), JSON.stringify(event));
 }
 
 const worker = new Worker<AgentJob>(
@@ -33,11 +31,18 @@ const worker = new Worker<AgentJob>(
       throw error;
     }
   },
-  { connection: { url: redisUrl, maxRetriesPerRequest: null } },
+  { connection: { url: REDIS_URL, maxRetriesPerRequest: null }, concurrency: 4 },
 );
 
 worker.on("ready", () => {
-  console.log(`[worker] listening on queue "${AGENT_QUEUE}"`);
+  console.log(
+    `[worker] listening on queue "${AGENT_QUEUE}" (agent mode: ${agentMode()})`,
+  );
+  if (agentMode() === "claude") {
+    console.warn(
+      "[worker] claude mode runs agent bash on the host worktree (Docker sandbox not yet implemented) — dev use only",
+    );
+  }
 });
 
 worker.on("failed", (job, error) => {

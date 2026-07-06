@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  transpilePackages: ["@dat/db", "@dat/shared", "@dat/storage"],
+  serverExternalPackages: ["@prisma/client", "bullmq", "ioredis"],
 };
 
 export default nextConfig;
